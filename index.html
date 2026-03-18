@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-pt">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,42 +7,94 @@
   
   <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
   
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9;}
+    #calendar { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);}
+    
+    /* Estilo da Janelinha de Pedido (Modal) */
+    #modal-reserva {
+      display: none; /* Começa escondido */
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: white; padding: 20px; border-radius: 8px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5); z-index: 1000; width: 300px;
+    }
+    #modal-reserva input, #modal-reserva select { width: 100%; margin-bottom: 10px; padding: 8px; box-sizing: border-box; }
+    .btn { padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 5px;}
+    .btn-salvar { background: #28a745; color: white; }
+    .btn-fechar { background: #dc3545; color: white; }
+  </style>
+
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       var calendarEl = document.getElementById('calendar');
       
-      // Coloque aqui o URL que copiou do Google Apps Script
-      var googleAppsScriptUrl = 'https://script.google.com/macros/s/AKfycbwng9zFitjFWo_B0HN1xqlyaf1A6nRn04TklLt8NokK-uwSKbGVdTj1TgD-B7C_GL6c_w/exec';
+      // COLOQUE O SEU NOVO LINK DO APPS SCRIPT AQUI
+      var googleAppsScriptUrl = 'https://script.google.com/macros/s/AKfycbwkBbFueCpp-9bGVXPVbAcCoAgCG04bLHc83K_5yweXvmfbpvXqbjJ9lkViG4yfEDOH7w/exec';
 
       var calendar = new FullCalendar.Calendar(calendarEl, {
-        initialView: 'dayGridMonth', // Começa na visualização de grelha
-        locale: 'pt', // Idioma em português
+        initialView: 'dayGridMonth',
+        locale: 'pt-br',
         headerToolbar: {
           left: 'prev,next today',
           center: 'title',
-          right: 'dayGridMonth,listWeek' // Botões para alternar entre Grelha Mensal e Lista Semanal
+          right: 'dayGridMonth,listWeek'
         },
-        // Vai buscar os eventos diretamente à sua folha de cálculo
-        events: googleAppsScriptUrl 
+        events: googleAppsScriptUrl,
+        
+        // ISSO PERMITE CLICAR NAS DATAS!
+        selectable: true, 
+        select: function(info) {
+          // Preenche o campo de data automaticamente com o dia clicado
+          document.getElementById('data-escolhida').value = info.startStr;
+          // Mostra a janelinha de pedido
+          document.getElementById('modal-reserva').style.display = 'block';
+        }
       });
       
       calendar.render();
     });
+
+    // Função para fechar a janelinha
+    function fecharModal() {
+      document.getElementById('modal-reserva').style.display = 'none';
+    }
+
+    // Função que será chamada ao clicar em Enviar Pedido
+    function enviarPedido() {
+      var titulo = document.getElementById('titulo-reserva').value;
+      var data = document.getElementById('data-escolhida').value;
+      var congregacao = document.getElementById('congregacao').value;
+      
+      alert("Você clicou para reservar o dia " + data + " para: " + titulo + " (" + congregacao + "). O próximo passo será enviar isso para a planilha!");
+      fecharModal();
+    }
   </script>
-  
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    #calendar { max-width: 900px; margin: 0 auto; }
-    .btn-reserva { display: block; width: 200px; margin: 20px auto; padding: 10px; text-align: center; background: #0056b3; color: white; text-decoration: none; border-radius: 5px; }
-  </style>
 </head>
 <body>
 
   <h2 style="text-align: center;">Agendamento do Salão do Reino</h2>
   
-  <a href="#" class="btn-reserva">Solicitar Horário</a>
-
   <div id="calendar"></div>
+
+  <div id="modal-reserva">
+    <h3>Solicitar Horário</h3>
+    <label>Data Escolhida:</label>
+    <input type="text" id="data-escolhida" readonly>
+    
+    <label>Evento:</label>
+    <input type="text" id="titulo-reserva" placeholder="Ex: Limpeza, Reunião Extra">
+    
+    <label>Congregação:</label>
+    <select id="congregacao">
+      <option value="Bela Vista">Bela Vista</option>
+      <option value="Congregação 2">Congregação 2</option>
+      <option value="Congregação 3">Congregação 3</option>
+      <option value="Congregação 4">Congregação 4</option>
+    </select>
+    
+    <button class="btn btn-salvar" onclick="enviarPedido()">Enviar Pedido</button>
+    <button class="btn btn-fechar" onclick="fecharModal()">Cancelar</button>
+  </div>
 
 </body>
 </html>
