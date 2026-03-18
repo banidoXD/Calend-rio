@@ -29,7 +29,7 @@
       var calendarEl = document.getElementById('calendar');
       
       // COLOQUE O SEU NOVO LINK DO APPS SCRIPT AQUI
-      var googleAppsScriptUrl = 'https://script.google.com/macros/s/AKfycbwkBbFueCpp-9bGVXPVbAcCoAgCG04bLHc83K_5yweXvmfbpvXqbjJ9lkViG4yfEDOH7w/exec';
+      var googleAppsScriptUrl = 'https://script.google.com/macros/s/AKfycbxCop7u19B6jb_da89_VkxQtbqDp5jYXALtCD8RZ4M1dA1tummLfUjJDUOYiQ8CLW4vCw/exec';
 
       var calendar = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
@@ -60,13 +60,54 @@
     }
 
     // Função que será chamada ao clicar em Enviar Pedido
+// Função que será chamada ao clicar em Enviar Pedido
     function enviarPedido() {
       var titulo = document.getElementById('titulo-reserva').value;
       var data = document.getElementById('data-escolhida').value;
       var congregacao = document.getElementById('congregacao').value;
+      var botao = document.querySelector('.btn-salvar');
       
-      alert("Você clicou para reservar o dia " + data + " para: " + titulo + " (" + congregacao + "). O próximo passo será enviar isso para a planilha!");
-      fecharModal();
+      // Verifica se o irmão preencheu o título
+      if (!titulo) {
+        alert("Por favor, digite o nome do evento.");
+        return;
+      }
+      
+      // Muda o botão para mostrar que está carregando
+      botao.innerText = "Enviando...";
+      botao.disabled = true;
+
+      // Pacote de dados que será enviado para o Google
+      var dados = {
+        titulo: titulo,
+        data: data,
+        congregacao: congregacao
+      };
+
+      // ATENÇÃO: COLE O SEU LINK DO APPS SCRIPT AQUI NOVAMENTE
+      var googleAppsScriptUrl = 'https://script.google.com/macros/s/AKfycbxCop7u19B6jb_da89_VkxQtbqDp5jYXALtCD8RZ4M1dA1tummLfUjJDUOYiQ8CLW4vCw/exec';
+
+      // Envia os dados para a planilha
+      fetch(googleAppsScriptUrl, {
+        method: 'POST',
+        body: JSON.stringify(dados),
+        // O text/plain evita bloqueios de segurança do navegador (CORS)
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8', 
+        }
+      })
+      .then(response => {
+        alert("Pedido enviado com sucesso! O evento ficará 'A Confirmar' até a aprovação do administrador.");
+        fecharModal();
+        // Recarrega a página para o novo evento aparecer no calendário
+        location.reload(); 
+      })
+      .catch(error => {
+        alert("Houve um erro ao enviar. Verifique a internet e tente novamente.");
+        console.error(error);
+        botao.innerText = "Enviar Pedido";
+        botao.disabled = false;
+      });
     }
   </script>
 </head>
