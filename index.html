@@ -11,100 +11,166 @@
     body { font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f9;}
     #calendar { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1);}
     
-    /* Estilo da Janelinha de Pedido (Modal) */
+    .legenda-container { max-width: 900px; margin: 0 auto 15px auto; text-align: center; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 0 5px rgba(0,0,0,0.05); font-size: 14px;}
+    .legenda-item { display: inline-block; margin: 0 10px; }
+    .cor-box { width: 15px; height: 15px; display: inline-block; border-radius: 3px; vertical-align: middle; margin-right: 5px; border: 2px solid; background: transparent; }
+
     #modal-reserva {
-      display: none; /* Começa escondido */
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
       background: white; padding: 20px; border-radius: 8px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.5); z-index: 1000; width: 300px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.5); z-index: 1000; width: 320px; max-height: 90vh; overflow-y: auto;
     }
-    #modal-reserva input, #modal-reserva select { width: 100%; margin-bottom: 10px; padding: 8px; box-sizing: border-box; }
+    #modal-reserva input, #modal-reserva select, #modal-reserva textarea { width: 100%; margin-bottom: 10px; padding: 8px; box-sizing: border-box; }
+    .linha-horarios { display: flex; gap: 10px; }
     .btn { padding: 10px; border: none; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 5px;}
     .btn-salvar { background: #28a745; color: white; }
     .btn-fechar { background: #dc3545; color: white; }
   </style>
 
   <script>
+    // =======================================================
+    // COLE O SEU LINK DO APPS SCRIPT AQUI ABAIXO
+    // =======================================================
+    const URL_APPS_SCRIPT = 'https://script.google.com/macros/s/AKfycbwX1CPJ1jJ5TgkGv7nvjLJMIZMr-n52BkJlJ7fEKTeu62ZLDoH57GFF4HnP8pZX9e24pg/exec';
+
+    // EVENTOS FIXOS (RECORRENTES)
+    // daysOfWeek: [0=Dom, 1=Seg, 2=Ter, 3=Qua, 4=Qui, 5=Sex, 6=Sáb]
+    const EVENTOS_FIXOS = [
+      {
+        title: 'Reunião Bela Vista',
+        daysOfWeek: [3], // Toda Quarta-feira
+        startTime: '19:30',
+        endTime: '21:15',
+        backgroundColor: 'transparent',
+        borderColor: '#0056b3',
+        textColor: '#0056b3'
+      },
+      {
+        title: 'Saída de Campo - Providência',
+        daysOfWeek: [5], // Toda Sexta-feira
+        startTime: '18:30',
+        endTime: '20:00',
+        backgroundColor: 'transparent',
+        borderColor: '#28a745',
+        textColor: '#28a745'
+      }
+      // Você pode adicionar outras reuniões fixas aqui depois!
+    ];
+
+    var calendarioObj; // Variável global para acessarmos os eventos na hora da checagem
+
     document.addEventListener('DOMContentLoaded', function() {
       var calendarEl = document.getElementById('calendar');
-      
-      // COLOQUE O SEU NOVO LINK DO APPS SCRIPT AQUI
-      var googleAppsScriptUrl = 'https://script.google.com/macros/s/AKfycbxCop7u19B6jb_da89_VkxQtbqDp5jYXALtCD8RZ4M1dA1tummLfUjJDUOYiQ8CLW4vCw/exec';
 
-      var calendar = new FullCalendar.Calendar(calendarEl, {
+      calendarioObj = new FullCalendar.Calendar(calendarEl, {
         initialView: 'dayGridMonth',
         locale: 'pt-br',
-        headerToolbar: {
-          left: 'prev,next today',
-          center: 'title',
-          right: 'dayGridMonth,listWeek'
-        },
-        events: googleAppsScriptUrl,
+        buttonText: { today: 'Hoje', month: 'Mês', list: 'Lista' },
+        headerToolbar: { left: 'prev,next today', center: 'title', right: 'dayGridMonth,listWeek' },
         
-        // ISSO PERMITE CLICAR NAS DATAS!
+        eventDisplay: 'block', // Remove o pontinho e força o formato de bloco/borda
+        displayEventTime: true, // Mostra o horário no evento
+        
+        // Carrega os eventos dinâmicos (planilha) e os fixos (código)
+        eventSources: [
+          { url: URL_APPS_SCRIPT },
+          { events: EVENTOS_FIXOS }
+        ],
+        
         selectable: true, 
-        select: function(info) {
-          // Preenche o campo de data automaticamente com o dia clicado
-          document.getElementById('data-escolhida').value = info.startStr;
-          // Mostra a janelinha de pedido
-          document.getElementById('modal-reserva').style.display = 'block';
+        select: function(info) { abrirModal(info.startStr); },
+        eventClick: function(info) {
+          var dataEvento = info.event.startStr.split('T')[0]; 
+          var confirmar = confirm("Já existe um agendamento neste dia.\nDeseja solicitar uma reserva para um HORÁRIO diferente neste mesmo dia?");
+          if (confirmar) { abrirModal(dataEvento); }
         }
       });
       
-      calendar.render();
+      calendarioObj.render();
     });
 
-    // Função para fechar a janelinha
-    function fecharModal() {
-      document.getElementById('modal-reserva').style.display = 'none';
+    function abrirModal(data) {
+      document.getElementById('data-escolhida').value = data;
+      document.getElementById('modal-reserva').style.display = 'block';
     }
 
-    // Função que será chamada ao clicar em Enviar Pedido
-// Função que será chamada ao clicar em Enviar Pedido
+    function fecharModal() {
+      document.getElementById('modal-reserva').style.display = 'none';
+      document.getElementById('titulo-reserva').value = ''; 
+      document.getElementById('solicitante').value = ''; 
+      document.getElementById('observacoes').value = ''; 
+      document.getElementById('hora-inicio').value = ''; 
+      document.getElementById('hora-fim').value = ''; 
+    }
+
+    function checarChoqueHorario(data, horaInicio, horaFim) {
+      var inicioSolicitado = new Date(data + 'T' + horaInicio);
+      var fimSolicitado = new Date(data + 'T' + horaFim);
+      var eventos = calendarioObj.getEvents();
+      
+      for (var i = 0; i < eventos.length; i++) {
+        var ev = eventos[i];
+        if (ev.start && ev.end) {
+          // Se o início ou fim do pedido cair no meio de um evento existente, é choque!
+          if ((inicioSolicitado >= ev.start && inicioSolicitado < ev.end) || 
+              (fimSolicitado > ev.start && fimSolicitado <= ev.end) ||
+              (inicioSolicitado <= ev.start && fimSolicitado >= ev.end)) {
+            return true;
+          }
+        }
+      }
+      return false;
+    }
+
     function enviarPedido() {
       var titulo = document.getElementById('titulo-reserva').value;
       var data = document.getElementById('data-escolhida').value;
       var congregacao = document.getElementById('congregacao').value;
+      var horaInicio = document.getElementById('hora-inicio').value;
+      var horaFim = document.getElementById('hora-fim').value;
+      var solicitante = document.getElementById('solicitante').value;
+      var observacoes = document.getElementById('observacoes').value;
       var botao = document.querySelector('.btn-salvar');
       
-      // Verifica se o irmão preencheu o título
-      if (!titulo) {
-        alert("Por favor, digite o nome do evento.");
+      if (!titulo || !horaInicio || !horaFim) {
+        alert("Por favor, preencha o Título do evento e os Horários de Início e Término.");
+        return;
+      }
+
+      if (horaInicio >= horaFim) {
+        alert("O horário de término deve ser depois do horário de início.");
+        return;
+      }
+
+      // TRAVA DE SEGURANÇA: Bloqueio de Choque de Horário
+      if (checarChoqueHorario(data, horaInicio, horaFim)) {
+        alert("ERRO: Já existe um evento reservado para este mesmo horário. Por favor, escolha outro horário.");
         return;
       }
       
-      // Muda o botão para mostrar que está carregando
       botao.innerText = "Enviando...";
       botao.disabled = true;
 
-      // Pacote de dados que será enviado para o Google
-      var dados = {
-        titulo: titulo,
-        data: data,
-        congregacao: congregacao
+      var dados = { 
+        titulo: titulo, data: data, congregacao: congregacao, 
+        horaInicio: horaInicio, horaFim: horaFim, 
+        solicitante: solicitante, observacoes: observacoes 
       };
 
-      // ATENÇÃO: COLE O SEU LINK DO APPS SCRIPT AQUI NOVAMENTE
-      var googleAppsScriptUrl = 'https://script.google.com/macros/s/AKfycbxCop7u19B6jb_da89_VkxQtbqDp5jYXALtCD8RZ4M1dA1tummLfUjJDUOYiQ8CLW4vCw/exec';
-
-      // Envia os dados para a planilha
-      fetch(googleAppsScriptUrl, {
+      fetch(URL_APPS_SCRIPT, {
         method: 'POST',
         body: JSON.stringify(dados),
-        // O text/plain evita bloqueios de segurança do navegador (CORS)
-        headers: {
-          'Content-Type': 'text/plain;charset=utf-8', 
-        }
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' }
       })
       .then(response => {
-        alert("Pedido enviado com sucesso! O evento ficará 'A Confirmar' até a aprovação do administrador.");
+        alert("Pedido enviado! O evento ficará 'A Confirmar' até a aprovação.");
         fecharModal();
-        // Recarrega a página para o novo evento aparecer no calendário
+        botao.innerText = "Enviar Pedido";
+        botao.disabled = false;
         location.reload(); 
       })
       .catch(error => {
-        alert("Houve um erro ao enviar. Verifique a internet e tente novamente.");
-        console.error(error);
+        alert("Erro ao enviar. Tente novamente.");
         botao.innerText = "Enviar Pedido";
         botao.disabled = false;
       });
@@ -113,25 +179,51 @@
 </head>
 <body>
 
-  <h2 style="text-align: center;">Agendamento do Salão do Reino</h2>
+  <h2 style="text-align: center; margin-bottom: 5px;">Agendamento do Salão do Reino</h2>
   
+  <div class="legenda-container">
+    <div class="legenda-item"><span class="cor-box" style="border-color:#0056b3;"></span>Bela Vista</div>
+    <div class="legenda-item"><span class="cor-box" style="border-color:#28a745;"></span>Providência</div>
+    <div class="legenda-item"><span class="cor-box" style="border-color:#fd7e14;"></span>Jardim Brasil</div>
+    <div class="legenda-item"><span class="cor-box" style="border-color:#6f42c1;"></span>Central</div>
+    <div class="legenda-item"><span class="cor-box" style="border-color:#999999;"></span>⏳ Pendente</div>
+  </div>
+
   <div id="calendar"></div>
 
   <div id="modal-reserva">
-    <h3>Solicitar Horário</h3>
-    <label>Data Escolhida:</label>
-    <input type="text" id="data-escolhida" readonly>
+    <h3 style="margin-top: 0;">Solicitar Horário</h3>
     
-    <label>Evento:</label>
-    <input type="text" id="titulo-reserva" placeholder="Ex: Limpeza, Reunião Extra">
+    <label>Data Escolhida:</label>
+    <input type="text" id="data-escolhida" readonly style="background: #eee;">
+    
+    <div class="linha-horarios">
+      <div style="width: 50%;">
+        <label>Início (Obrigatório):</label>
+        <input type="time" id="hora-inicio">
+      </div>
+      <div style="width: 50%;">
+        <label>Término (Obrigatório):</label>
+        <input type="time" id="hora-fim">
+      </div>
+    </div>
+    
+    <label>Evento (Obrigatório):</label>
+    <input type="text" id="titulo-reserva" placeholder="Ex: Limpeza, Discurso Especial">
     
     <label>Congregação:</label>
     <select id="congregacao">
       <option value="Bela Vista">Bela Vista</option>
-      <option value="Congregação 2">Congregação 2</option>
-      <option value="Congregação 3">Congregação 3</option>
-      <option value="Congregação 4">Congregação 4</option>
+      <option value="Providência">Providência</option>
+      <option value="Jardim Brasil">Jardim Brasil</option>
+      <option value="Central">Central</option>
     </select>
+
+    <label>Solicitante (Opcional):</label>
+    <input type="text" id="solicitante" placeholder="Seu nome">
+
+    <label>Observações (Opcional):</label>
+    <textarea id="observacoes" rows="2" placeholder="Detalhes extras da reserva..."></textarea>
     
     <button class="btn btn-salvar" onclick="enviarPedido()">Enviar Pedido</button>
     <button class="btn btn-fechar" onclick="fecharModal()">Cancelar</button>
