@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calendário do Salão do Reino</title>
+  
+  <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var calendarEl = document.getElementById('calendar');
+      
+      // Coloque aqui o URL que copiou do Google Apps Script
+      var googleAppsScriptUrl = 'SEU_URL_DO_APPS_SCRIPT_AQUI';
+
+      var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth', // Começa na visualização de grelha
+        locale: 'pt', // Idioma em português
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,listWeek' // Botões para alternar entre Grelha Mensal e Lista Semanal
+        },
+        // Vai buscar os eventos diretamente à sua folha de cálculo
+        events: googleAppsScriptUrl 
+      });
+      
+      calendar.render();
+    });
+  </script>
+  
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #calendar { max-width: 900px; margin: 0 auto; }
+    .btn-reserva { display: block; width: 200px; margin: 20px auto; padding: 10px; text-align: center; background: #0056b3; color: white; text-decoration: none; border-radius: 5px; }
+  </style>
+</head>
+<body>
+
+  <h2 style="text-align: center;">Agendamento do Salão do Reino</h2>
+  
+  <a href="#" class="btn-reserva">Solicitar Horário</a>
+
+  <div id="calendar"></div>
+
+</body>
+</html>
